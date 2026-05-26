@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "test": "jest --passWithNoTests",
+    "test:coverage": "jest --coverage --passWithNoTests",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx --max-warnings 0"
   },
@@ -63,6 +64,21 @@
     },
     "transformIgnorePatterns": [
       "node_modules/(?!(@stellar)/)"
-    ]
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*.test.{ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/app/layout.tsx",
+      "!src/app/page.tsx"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "lines": 70,
+        "functions": 70,
+        "branches": 70,
+        "statements": 70
+      }
+    }
   }
 }

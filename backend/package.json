@@ -55,6 +55,14 @@
       "!src/**/*.test.ts",
       "!src/**/*.integration.test.ts",
       "!src/**/*.d.ts"
-    ]
+    ],
+    "coverageThreshold": {
+      "global": {
+        "lines": 70,
+        "functions": 70,
+        "branches": 70,
+        "statements": 70
+      }
+    }
   }
 }
