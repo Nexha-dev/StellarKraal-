@@ -1,6 +1,6 @@
 "use client";
 import { useWizard, AnimalType } from "@/context/LoanWizardContext";
-import { signTransaction } from "@stellar/freighter-api";
+import { signTransaction } from "@/lib/freighterClient";
 import { submitSignedXdr } from "@/lib/stellarUtils";
 
 const ANIMAL_TYPES: { value: AnimalType; label: string; emoji: string; desc: string }[] = [

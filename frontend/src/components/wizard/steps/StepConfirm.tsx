@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useWizard } from "@/context/LoanWizardContext";
-import { signTransaction } from "@stellar/freighter-api";
+import { signTransaction } from "@/lib/freighterClient";
 import { submitSignedXdr } from "@/lib/stellarUtils";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";

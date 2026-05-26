@@ -19,6 +19,10 @@ export function healthColor(bps: number): string {
 
 /** Submit a signed XDR transaction and return the result value */
 export async function submitSignedXdr(signedXdr: string): Promise<string> {
+  if (typeof window !== "undefined" && window.__STELLARKRAAL_E2E__?.submitSignedXdr) {
+    return Promise.resolve(window.__STELLARKRAAL_E2E__.submitSignedXdr(signedXdr));
+  }
+
   const server = new Server(RPC_URL);
   const tx = TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE);
   const result = await server.sendTransaction(tx);

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { colors } from "@/lib/design-tokens";
+import SkeletonCollateralCard from "@/components/SkeletonCollateralCard";
 
 interface Props {
   walletAddress: string;
@@ -23,7 +24,7 @@ export default function CollateralCard({ walletAddress }: Props) {
     }
   }
 
-  if (isLoading) return <SkeletonCollateralCard />;
+  if (loading && !data) return <SkeletonCollateralCard />;
 
   return (
     <div className={`${colors.background.card} rounded-2xl p-6 shadow mb-4`}>

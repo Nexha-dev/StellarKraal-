@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
 const POLL_INTERVAL = 30_000;
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export function useHealthFactor(loanId: string) {
   const [healthFactor, setHealthFactor] = useState<number | null>(null);
@@ -14,7 +15,7 @@ export function useHealthFactor(loanId: string) {
     setLoading(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/health/${loanId}`
+        `${API}/api/health/${loanId}`
       );
       const data = await res.json();
       setHealthFactor(Number(data.health_factor ?? 0));

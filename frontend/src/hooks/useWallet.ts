@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { isConnected, isAllowed, setAllowed, getAddress } from "@stellar/freighter-api";
+import { getAddress, isAllowed, isConnected, setAllowed } from "@/lib/freighterClient";
 
 const STORAGE_KEY = "stellarkraal_wallet";
 

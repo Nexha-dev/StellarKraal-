@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { signTransaction } from "@stellar/freighter-api";
+import { signTransaction } from "@/lib/freighterClient";
 import { submitSignedXdr } from "@/lib/stellarUtils";
 import { colors } from "@/lib/design-tokens";
 

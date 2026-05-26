@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
-import { isConnected, getAddress, setAllowed } from "@stellar/freighter-api";
+import { useEffect } from "react";
 import { colors } from "@/lib/design-tokens";
+import { useWallet } from "@/hooks/useWallet";
 
 interface Props {
   onConnect: (address: string) => void;

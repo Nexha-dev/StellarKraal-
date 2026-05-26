@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { signTransaction } from "@stellar/freighter-api";
+import { signTransaction } from "@/lib/freighterClient";
 import { submitSignedXdr } from "@/lib/stellarUtils";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { motion, useReducedMotion } from "framer-motion";

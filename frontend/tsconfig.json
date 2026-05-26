@@ -17,5 +17,12 @@
     "paths": { "@/*": ["./src/*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "playwright-a11y.config.ts"]
+  "exclude": [
+    "node_modules",
+    "playwright-a11y.config.ts",
+    "playwright.e2e.config.ts",
+    "src/__tests__/**",
+    "tests/**",
+    "**/*.stories.tsx"
+  ]
 }

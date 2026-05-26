@@ -2,6 +2,7 @@
 import { useState } from "react";
 import WalletConnect from "@/components/WalletConnect";
 import CollateralRegistrationForm from "@/components/CollateralRegistrationForm";
+import LoanForm from "@/components/LoanForm";
 import PageTransition from "@/components/PageTransition";
 
 export default function Borrow() {
@@ -25,6 +26,9 @@ export default function Borrow() {
             Collateral registered with ID: {collateralId}
           </p>
         </div>
+      )}
+      {wallet && collateralId && (
+        <LoanForm walletAddress={wallet} initialCollateralId={collateralId} />
       )}
     </main>
     </PageTransition>

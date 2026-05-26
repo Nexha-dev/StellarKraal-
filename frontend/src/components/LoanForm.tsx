@@ -1,27 +1,29 @@
 "use client";
 import { useState } from "react";
-import { signTransaction } from "@stellar/freighter-api";
+import { signTransaction } from "@/lib/freighterClient";
 import { submitSignedXdr } from "@/lib/stellarUtils";
 import { colors } from "@/lib/design-tokens";
 
 interface Props {
   walletAddress: string;
+  initialCollateralId?: string;
 }
 
 const ANIMAL_TYPES = ["cattle", "goat", "sheep"];
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-export default function LoanForm({ walletAddress }: Props) {
-  const [step, setStep] = useState<"collateral" | "loan">("collateral");
+export default function LoanForm({ walletAddress, initialCollateralId }: Props) {
+  const [step, setStep] = useState<"collateral" | "loan">(initialCollateralId ? "loan" : "collateral");
   const [animalType, setAnimalType] = useState("cattle");
   const [count, setCount] = useState("");
   const [appraisedValue, setAppraisedValue] = useState("");
-  const [collateralId, setCollateralId] = useState("");
+  const [collateralId, setCollateralId] = useState(initialCollateralId || "");
   const [loanAmount, setLoanAmount] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function registerCollateral() {
+    setLoading(true);
     setStatus(null);
     try {
       const res = await fetch(`${API}/api/collateral/register`, {
@@ -39,10 +41,15 @@ export default function LoanForm({ walletAddress }: Props) {
       const result = await submitSignedXdr(signedTxXdr);
       setStatus(`✅ Collateral registered! ID: ${result}`);
       setStep("loan");
-    }).catch((e: any) => setStatus(`❌ ${e.message}`));
+    } catch (e: any) {
+      setStatus(`❌ ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function requestLoan() {
+    setLoading(true);
     setStatus(null);
     try {
       const res = await fetch(`${API}/api/loan/request`, {
@@ -64,8 +71,6 @@ export default function LoanForm({ walletAddress }: Props) {
       setLoading(false);
     }
   }
-
-  if (isLoading) return <SkeletonLoanCard />;
 
   return (
     <div className={`${colors.background.card} rounded-2xl p-6 shadow mt-6 space-y-4`}>
