@@ -29,7 +29,6 @@ jobs:
         with:
           node-version: '20'
 
-      # Cache node_modules and .next for faster subsequent runs
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -62,8 +61,10 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_NETWORK: testnet
-          NEXT_PUBLIC_API_URL: http://localhost:3001
+          NEXT_PUBLIC_NETWORK: ${{ secrets.NEXT_PUBLIC_NETWORK }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          CONTRACT_ID: ${{ secrets.CONTRACT_ID }}
+          RPC_URL: ${{ secrets.RPC_URL }}
 
   lighthouse:
     name: Lighthouse CI
@@ -93,8 +94,10 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_NETWORK: testnet
-          NEXT_PUBLIC_API_URL: http://localhost:3001
+          NEXT_PUBLIC_NETWORK: ${{ secrets.NEXT_PUBLIC_NETWORK }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          CONTRACT_ID: ${{ secrets.CONTRACT_ID }}
+          RPC_URL: ${{ secrets.RPC_URL }}
 
       - name: Run Lighthouse CI
         run: npx @lhci/cli@0.14.x autorun

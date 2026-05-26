@@ -47,6 +47,7 @@ jobs:
       - name: Run tests with coverage
         env:
           NODE_ENV: test
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: npm run test:coverage -- --coverageReporters=json-summary --coverageReporters=text
 
       - name: Upload coverage artifact
