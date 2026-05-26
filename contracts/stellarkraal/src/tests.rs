@@ -1443,4 +1443,160 @@ mod tests {
         // Should fail with Unauthorized error when other user tries to repay
         client.repay_loan(&other_user, &loan_id, &100_000i128);
     }
+
+    // ── health_factor unit tests (#357) ───────────────────────────────────
+
+    /// Happy path: typical collateral and loan values produce a healthy factor.
+    /// collateral=1_000_000, outstanding=600_000, liq_thr=8000 (80%)
+    /// hf = (1_000_000 * 8000) / (600_000 * 10_000) * 10_000 = 13_333
+    #[test]
+    fn test_health_factor_typical_values() {
+        let (env, cid, admin, oracle, token, treasury) = setup();
+        init(&env, &cid, &admin, &oracle, &token, &treasury);
+        let client = StellarKraalClient::new(&env, &cid);
+        let borrower = Address::generate(&env);
+        let col_id = client.register_livestock(&borrower, &symbol_short!("cattle"), &2u32, &1_000_000i128);
+        let loan_id = client.request_loan(&borrower, &vec![&env, col_id], &600_000i128);
+        let hf = client.health_factor(&loan_id);
+        // hf = (1_000_000 * 8000) / (600_000 * 10_000) * 10_000 = 13_333
+        assert_eq!(hf, 13_333, "expected health factor 13_333 for 60% LTV at 80% threshold");
+        assert!(hf > 10_000, "position should be healthy (hf > 10_000)");
+    }
+
+    /// Boundary: health factor equals exactly 1.0 (10_000) when outstanding equals
+    /// collateral_value * liq_thr_bps / 10_000.
+    /// collateral=1_000_000, liq_thr=8000 → max_safe_outstanding = 800_000
+    /// hf = (1_000_000 * 8000) / (800_000 * 10_000) * 10_000 = 10_000
+    #[test]
+    fn test_health_factor_exactly_one() {
+        let (env, cid, admin, oracle, token, treasury) = setup();
+        init(&env, &cid, &admin, &oracle, &token, &treasury);
+        let client = StellarKraalClient::new(&env, &cid);
+        let borrower = Address::generate(&env);
+        // Register collateral worth 1_000_000; LTV=60% → max loan = 600_000
+        // We need outstanding = 800_000 for hf = 1.0, but LTV caps at 600_000.
+        // Use larger collateral so LTV allows 800_000 loan.
+        // collateral=2_000_000, LTV=60% → max=1_200_000; borrow 800_000
+        // hf = (2_000_000 * 8000) / (800_000 * 10_000) * 10_000 = 20_000 — not 1.0
+        // To get exactly 1.0: outstanding = collateral * liq_thr / 10_000
+        //   = 2_000_000 * 8000 / 10_000 = 1_600_000; but LTV=60% caps at 1_200_000.
+        // Use collateral=1_000_000, liq_thr=8000, borrow at max LTV=600_000 then
+        // partially repay so outstanding = 800_000 is impossible (started at 600_000).
+        // Instead: collateral=1_000_000, borrow=600_000, repay until outstanding=800_000
+        // is impossible. Use collateral=10_000, borrow=6_000 (LTV 60%):
+        //   hf = (10_000 * 8000) / (6_000 * 10_000) * 10_000 = 13_333
+        // For hf=10_000: outstanding = collateral * liq_thr / 10_000 = 10_000 * 8000 / 10_000 = 8_000
+        // But LTV=60% → max borrow = 6_000. We can't borrow 8_000 directly.
+        // Use a different collateral size: collateral=100_000, borrow=60_000 (LTV 60%)
+        //   then repay 60_000 - 80_000 is impossible (can't go negative).
+        // The only way to reach hf=1.0 exactly is to set collateral such that
+        //   LTV-capped borrow == liq_thr-capped outstanding.
+        //   LTV=60% → borrow = collateral * 6000 / 10_000
+        //   For hf=1.0: outstanding = collateral * 8000 / 10_000
+        //   These are equal only if 6000 == 8000, which is false.
+        // So we test hf=1.0 by using a custom liq_thr equal to LTV (6000):
+        //   Re-initialize with liq_thr=6000 so max borrow = collateral * 6000/10_000
+        //   and hf=1.0 when outstanding = collateral * 6000/10_000 (i.e. at origination).
+        let env2 = Env::default();
+        env2.mock_all_auths();
+        let cid2 = env2.register_contract(None, StellarKraal);
+        let admin2 = Address::generate(&env2);
+        let oracle2 = Address::generate(&env2);
+        let treasury2 = Address::generate(&env2);
+        let token2 = env2.register_stellar_asset_contract(admin2.clone());
+        token::StellarAssetClient::new(&env2, &token2).mint(&cid2, &1_000_000_000_000i128);
+        let client2 = StellarKraalClient::new(&env2, &cid2);
+        // liq_thr = 6000 = LTV → hf at origination = 1.0 exactly
+        client2.initialize(&admin2, &oracle2, &token2, &treasury2, &6000u32, &6000u32);
+        let borrower2 = Address::generate(&env2);
+        let col_id2 = client2.register_livestock(&borrower2, &symbol_short!("cattle"), &1u32, &1_000_000i128);
+        let loan_id2 = client2.request_loan(&borrower2, &vec![&env2, col_id2], &600_000i128);
+        let hf2 = client2.health_factor(&loan_id2);
+        // hf = (1_000_000 * 6000) / (600_000 * 10_000) * 10_000 = 10_000
+        assert_eq!(hf2, 10_000, "health factor should be exactly 10_000 (1.0) at boundary");
+    }
+
+    /// Zero collateral value: register with appraised_value=0 should fail with InvalidAmount.
+    #[test]
+    #[should_panic(expected = "Error(Contract, #8)")]
+    fn test_health_factor_zero_collateral_value_rejected() {
+        let (env, cid, admin, oracle, token, treasury) = setup();
+        init(&env, &cid, &admin, &oracle, &token, &treasury);
+        let client = StellarKraalClient::new(&env, &cid);
+        let owner = Address::generate(&env);
+        // appraised_value=0 must be rejected at registration
+        client.register_livestock(&owner, &symbol_short!("cattle"), &1u32, &0i128);
+    }
+
+    /// Maximum loan amount: borrowing exactly at the LTV cap produces hf = liq_thr / ltv.
+    /// collateral=1_000_000, LTV=6000 → max_loan=600_000
+    /// hf = (1_000_000 * 8000) / (600_000 * 10_000) * 10_000 = 13_333
+    #[test]
+    fn test_health_factor_at_maximum_loan_amount() {
+        let (env, cid, admin, oracle, token, treasury) = setup();
+        init(&env, &cid, &admin, &oracle, &token, &treasury);
+        let client = StellarKraalClient::new(&env, &cid);
+        let borrower = Address::generate(&env);
+        let col_id = client.register_livestock(&borrower, &symbol_short!("cattle"), &1u32, &1_000_000i128);
+        // Max allowed = 1_000_000 * 6000 / 10_000 = 600_000
+        let loan_id = client.request_loan(&borrower, &vec![&env, col_id], &600_000i128);
+        let hf = client.health_factor(&loan_id);
+        assert_eq!(hf, 13_333, "hf at max LTV should be liq_thr/ltv = 8000/6000 * 10_000 = 13_333");
+        assert!(hf > 10_000, "position at max LTV should still be healthy");
+    }
+
+    /// Exceeding max loan amount is rejected before a loan record is created.
+    #[test]
+    #[should_panic(expected = "Error(Contract, #4)")]
+    fn test_health_factor_exceeds_max_loan_rejected() {
+        let (env, cid, admin, oracle, token, treasury) = setup();
+        init(&env, &cid, &admin, &oracle, &token, &treasury);
+        let client = StellarKraalClient::new(&env, &cid);
+        let borrower = Address::generate(&env);
+        let col_id = client.register_livestock(&borrower, &symbol_short!("cattle"), &1u32, &1_000_000i128);
+        // 600_001 exceeds LTV cap of 600_000
+        client.request_loan(&borrower, &vec![&env, col_id], &600_001i128);
+    }
+
+    /// Health factor for a non-existent loan returns LoanNotFound.
+    #[test]
+    #[should_panic(expected = "Error(Contract, #5)")]
+    fn test_health_factor_loan_not_found() {
+        let (env, cid, admin, oracle, token, treasury) = setup();
+        init(&env, &cid, &admin, &oracle, &token, &treasury);
+        let client = StellarKraalClient::new(&env, &cid);
+        client.health_factor(&9999u64);
+    }
+
+    /// After full repayment outstanding=0, health_factor returns i128::MAX.
+    #[test]
+    fn test_health_factor_after_full_repayment_is_max() {
+        let (env, cid, admin, oracle, token, treasury) = setup();
+        init(&env, &cid, &admin, &oracle, &token, &treasury);
+        let client = StellarKraalClient::new(&env, &cid);
+        let borrower = Address::generate(&env);
+        let col_id = client.register_livestock(&borrower, &symbol_short!("cattle"), &1u32, &1_000_000i128);
+        let loan_id = client.request_loan(&borrower, &vec![&env, col_id], &600_000i128);
+        token::StellarAssetClient::new(&env, &token).mint(&borrower, &1_000_000i128);
+        client.repay_loan(&borrower, &loan_id, &600_000i128);
+        let hf = client.health_factor(&loan_id);
+        assert_eq!(hf, i128::MAX, "fully repaid loan should have health factor i128::MAX");
+    }
+
+    /// Health factor decreases as outstanding balance increases (partial repayment scenario).
+    #[test]
+    fn test_health_factor_decreases_with_higher_outstanding() {
+        let (env, cid, admin, oracle, token, treasury) = setup();
+        init(&env, &cid, &admin, &oracle, &token, &treasury);
+        let client = StellarKraalClient::new(&env, &cid);
+        let borrower = Address::generate(&env);
+        // Two separate loans with different amounts to compare health factors
+        let col_id1 = client.register_livestock(&borrower, &symbol_short!("cattle"), &1u32, &1_000_000i128);
+        let col_id2 = client.register_livestock(&borrower, &symbol_short!("goat"), &1u32, &1_000_000i128);
+        let loan_id_small = client.request_loan(&borrower, &vec![&env, col_id1], &300_000i128);
+        let loan_id_large = client.request_loan(&borrower, &vec![&env, col_id2], &600_000i128);
+        let hf_small = client.health_factor(&loan_id_small);
+        let hf_large = client.health_factor(&loan_id_large);
+        assert!(hf_small > hf_large, "smaller loan should have higher health factor");
+    }
 }
