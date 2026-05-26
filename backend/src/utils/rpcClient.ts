@@ -1,12 +1,8 @@
-import { SorobanRpc } from "@stellar/stellar-sdk";
 import CircuitBreaker from "opossum";
-
-const { Server } = SorobanRpc;
-
-const RPC_URL = process.env.RPC_URL || "https://soroban-testnet.stellar.org";
-
-// Create the base RPC server instance
-const baseServer = new Server(RPC_URL);
+import { fireAlert } from "./alerting";
+import { rules } from "./alertRules";
+import { pool } from "./connectionPool";
+import logger from "./logger";
 
 /**
  * Circuit breaker options:
@@ -28,79 +24,23 @@ const circuitBreakerOptions = {
 };
 
 /**
- * Retry configuration:
- * - maxRetries: 3 attempts
- * - exponential backoff: 1s, 2s, 4s
- */
-const MAX_RETRIES = 3;
-const BASE_DELAY = 1000; // 1 second
-
-/**
- * Exponential backoff delay calculation
- */
-function getRetryDelay(attempt: number): number {
-  return BASE_DELAY * Math.pow(2, attempt);
-}
-
-/**
- * Retry wrapper with exponential backoff
- */
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  operationName: string
-): Promise<T> {
-  let lastError: Error | undefined;
-
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error as Error;
-      
-      if (attempt < MAX_RETRIES - 1) {
-        const delay = getRetryDelay(attempt);
-        console.warn(
-          `RPC ${operationName} failed (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${delay}ms`
-        );
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
-    }
-  }
-
-  console.error(`RPC ${operationName} failed after ${MAX_RETRIES} attempts`);
-  throw lastError;
-}
-
-/**
- * Wrapped RPC methods with retry logic
+ * Wrapped RPC methods with connection pooling + retry logic
  */
 const rpcMethods = {
   getAccount: async (address: string) => {
-    return withRetry(
-      () => baseServer.getAccount(address),
-      `getAccount(${address})`
-    );
+    return pool.run((server) => server.getAccount(address));
   },
 
   prepareTransaction: async (tx: any) => {
-    return withRetry(
-      () => baseServer.prepareTransaction(tx),
-      "prepareTransaction"
-    );
+    return pool.run((server) => server.prepareTransaction(tx));
   },
 
   simulateTransaction: async (tx: any) => {
-    return withRetry(
-      () => baseServer.simulateTransaction(tx),
-      "simulateTransaction"
-    );
+    return pool.run((server) => server.simulateTransaction(tx));
   },
 
   getHealth: async () => {
-    return withRetry(
-      () => baseServer.getHealth(),
-      "getHealth"
-    );
+    return pool.run((server) => server.getHealth());
   },
 };
 
@@ -124,7 +64,7 @@ const getHealthBreaker = new CircuitBreaker(
   circuitBreakerOptions
 );
 
-// Circuit breaker event logging
+// Circuit breaker event logging + alerting
 [
   getAccountBreaker,
   prepareTransactionBreaker,
@@ -132,15 +72,26 @@ const getHealthBreaker = new CircuitBreaker(
   getHealthBreaker,
 ].forEach((breaker) => {
   breaker.on("open", () => {
-    console.error(`Circuit breaker opened for ${breaker.name}`);
+    logger.error("Circuit breaker opened", { breaker: breaker.name });
+    fireAlert(rules.rpcCircuitOpen, `Circuit breaker opened for ${breaker.name}`, {
+      breaker: breaker.name,
+    });
   });
 
   breaker.on("halfOpen", () => {
-    console.info(`Circuit breaker half-open for ${breaker.name}`);
+    logger.info("Circuit breaker half-open", { breaker: breaker.name });
   });
 
   breaker.on("close", () => {
-    console.info(`Circuit breaker closed for ${breaker.name}`);
+    logger.info("Circuit breaker closed", { breaker: breaker.name });
+  });
+
+  breaker.on("failure", (error: Error) => {
+    fireAlert(rules.rpcFailure, `RPC call failed: ${error.message}`, {
+      breaker: breaker.name,
+      error: error.message,
+    });
+    logger.warn(`RPC call failed: ${error.message}`, { breaker: breaker.name, error: error.message });
   });
 });
 

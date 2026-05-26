@@ -1,0 +1,13 @@
+# Trivy Vulnerability Suppression File
+# Format: CVE-YYYY-NNNNN  [optional comment]
+#
+# Only add entries here after a formal risk-acceptance review.
+# Each entry must include a comment explaining:
+#   - Why it is a false positive or accepted risk
+#   - Who approved the acceptance and when
+#   - When the entry should be re-evaluated (e.g., next release)
+#
+# Example:
+# CVE-2023-12345  # FP: only affects feature X not used here. Accepted by @alice 2026-01-15. Re-evaluate 2026-07-15.
+
+# Add accepted suppressions below:

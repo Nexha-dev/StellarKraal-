@@ -1,0 +1,57 @@
+{
+  "title": "StellarKraal Logs",
+  "uid": "stellarkraal-logs",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "All Logs",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "{container=~\"backend|frontend\"}",
+          "legendFormat": ""
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Errors",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "{container=~\"backend|frontend\"} |= \"error\" | level=\"error\"",
+          "legendFormat": ""
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Slow Requests (>1s)",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "{service=\"backend\"} | json | duration > 1000",
+          "legendFormat": ""
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "RPC Failures",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 24, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "{service=\"backend\"} |= \"rpc\" |= \"error\"",
+          "legendFormat": ""
+        }
+      ]
+    }
+  ]
+}

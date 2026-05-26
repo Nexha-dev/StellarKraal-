@@ -1,0 +1,25 @@
+name: Uptime CI
+
+on:
+  schedule:
+    - cron: "* * * * *" # every minute
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  uptime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Run Upptime monitors
+        uses: upptime/uptime-monitor@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          NOTIFICATION_EMAIL: ${{ secrets.NOTIFICATION_EMAIL }}

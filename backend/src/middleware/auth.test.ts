@@ -3,7 +3,7 @@ import request from "supertest";
 import app from "../index";
 
 // Suppress logger noise
-jest.mock("./utils/logger", () => ({
+jest.mock("../utils/logger", () => ({
   __esModule: true,
   default: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
   createRequestLogger: jest.fn(() => ({
@@ -168,7 +168,7 @@ describe("JWT Authentication", () => {
         .post("/api/collateral/register")
         .set("Authorization", `Bearer ${accessToken}`)
         .send({
-          owner: "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN",
+          owner: kp.publicKey(),
           animal_type: "cattle",
           count: 5,
           appraised_value: 1_000_000,

@@ -5,3 +5,11 @@ target/
 *.wasm
 .env
 *.log
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+*.tfvars
+*.tfvars.json

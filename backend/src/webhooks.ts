@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import { config } from "./config";
 
 export interface WebhookRegistration {
   id: string;
@@ -21,7 +20,22 @@ export interface DeliveryLog {
 const webhooks = new Map<string, WebhookRegistration>();
 const deliveryLogs: DeliveryLog[] = [];
 
+/** Reset in-memory state — for use in tests only. */
+export function __resetForTests(): void {
+  webhooks.clear();
+  deliveryLogs.length = 0;
+}
+
 export function registerWebhook(url: string): WebhookRegistration {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error("Invalid webhook URL");
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error("Webhook URL must use http or https");
+  }
   const id = crypto.randomUUID();
   const reg: WebhookRegistration = { id, url, createdAt: Date.now() };
   webhooks.set(id, reg);
@@ -37,7 +51,7 @@ export function getDeliveryLogs(): DeliveryLog[] {
 }
 
 function sign(payload: string): string {
-  const secret = config.WEBHOOK_SECRET ?? "default-webhook-secret-change-me";
+  const secret = process.env.WEBHOOK_SECRET ?? "default-webhook-secret-change-me";
   return "sha256=" + crypto.createHmac("sha256", secret).update(payload).digest("hex");
 }
 

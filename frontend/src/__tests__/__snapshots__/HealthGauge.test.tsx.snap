@@ -1,0 +1,32 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`HealthGauge matches snapshot (stable leaf component) 1`] = `
+<div
+  class="mt-4"
+>
+  <div
+    class="flex justify-between text-sm mb-1"
+  >
+    <span
+      class="font-semibold"
+      style="color: rgb(22, 163, 74);"
+    >
+      Healthy
+    </span>
+    <span
+      class="text-brown/60"
+    >
+      1.33
+      x
+    </span>
+  </div>
+  <div
+    class="w-full bg-brown/10 rounded-full h-4 overflow-hidden"
+  >
+    <div
+      class="h-4 rounded-full transition-all duration-500"
+      style="width: 67%; background-color: rgb(22, 163, 74);"
+    />
+  </div>
+</div>
+`;

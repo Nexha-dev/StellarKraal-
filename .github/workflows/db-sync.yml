@@ -1,0 +1,24 @@
+name: Weekly DB Sync (Prod to Staging)
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Every Sunday at midnight
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sync-db:
+    name: Sync and Mask Database
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Run Sync Script
+        run: chmod +x scripts/sync-db-staging.sh && ./scripts/sync-db-staging.sh
+        env:
+          PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
+          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}

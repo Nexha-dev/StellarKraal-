@@ -43,6 +43,6 @@ export function validateStellarPublicKey(key: string): {
   }
   return {
     success: false,
-    error: result.error.errors[0]?.message || "Invalid Stellar public key format",
+    error: result.error.issues[0]?.message || "Invalid Stellar public key format",
   };
 }

@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "/home/dp/Documents/StellarKraal-/backend/logs/.89a1c2c2090f61d1db2287fdf7274bbfa7b8e1d9-audit.json",
+    "files": [
+        {
+            "date": 1777186219512,
+            "name": "/home/dp/Documents/StellarKraal-/backend/logs/audit-2026-04-26.log",
+            "hash": "3d684e1d66da404ee598b2abe961ce1e4a1f9aa55d692c8c5364e6c89beda58a"
+        }
+    ],
+    "hashType": "sha256"
+}

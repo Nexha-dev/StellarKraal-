@@ -1,0 +1,446 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "StellarKraal API",
+    "version": "1.0.0",
+    "description": "Livestock-backed micro-lending API on Stellar/Soroban. All write endpoints return an unsigned XDR transaction that the client must sign with Freighter and submit to the Stellar network."
+  },
+  "servers": [
+    { "url": "/api/v1", "description": "Current version" }
+  ],
+  "tags": [
+    { "name": "health", "description": "Service health" },
+    { "name": "collateral", "description": "Livestock collateral management" },
+    { "name": "loan", "description": "Loan lifecycle" },
+    { "name": "oracle", "description": "Price oracle integration" },
+    { "name": "webhooks", "description": "Event webhook subscriptions" },
+    { "name": "admin", "description": "Admin endpoints" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Service health check",
+        "description": "Returns service status, uptime, and RPC reachability.",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Service is degraded (RPC unreachable)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/collateral/register": {
+      "post": {
+        "tags": ["collateral"],
+        "summary": "Register livestock collateral",
+        "description": "Builds an unsigned Soroban transaction to register livestock as on-chain collateral. The client must sign and submit the returned XDR.",
+        "operationId": "registerCollateral",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterCollateralRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Unsigned XDR transaction",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/XdrResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/loan/request": {
+      "post": {
+        "tags": ["loan"],
+        "summary": "Request a new loan",
+        "description": "Builds an unsigned Soroban transaction to request a loan against registered collateral.",
+        "operationId": "requestLoan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoanRequestBody" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Unsigned XDR transaction",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/XdrResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/loan/repay": {
+      "post": {
+        "tags": ["loan"],
+        "summary": "Repay a loan",
+        "description": "Builds an unsigned Soroban transaction for partial or full loan repayment.",
+        "operationId": "repayLoan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoanRepayBody" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Unsigned XDR transaction",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/XdrResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/loan/liquidate": {
+      "post": {
+        "tags": ["loan"],
+        "summary": "Liquidate an undercollateralised loan",
+        "description": "Builds an unsigned Soroban transaction to liquidate a loan whose health factor is below 1.",
+        "operationId": "liquidateLoan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoanLiquidateBody" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Unsigned XDR transaction",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/XdrResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/loan/{id}": {
+      "get": {
+        "tags": ["loan"],
+        "summary": "Fetch a loan record",
+        "operationId": "getLoan",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "minimum": 0 },
+            "description": "Loan ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Loan record (raw Soroban ScVal)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ScValResponse" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/health/{loanId}": {
+      "get": {
+        "tags": ["loan"],
+        "summary": "Get loan health factor",
+        "description": "Returns the health factor scaled by 10 000. Values ≥ 10 000 are healthy; < 10 000 are eligible for liquidation.",
+        "operationId": "getLoanHealth",
+        "parameters": [
+          {
+            "name": "loanId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "minimum": 0 },
+            "description": "Loan ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Health factor",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthFactorResponse" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/oracle/price-update": {
+      "post": {
+        "tags": ["oracle"],
+        "summary": "Invalidate appraisal cache",
+        "description": "Signals that oracle prices have changed; clears the server-side appraisal cache.",
+        "operationId": "oraclePriceUpdate",
+        "responses": {
+          "200": {
+            "description": "Cache invalidated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "invalidated": { "type": "boolean", "example": true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks": {
+      "post": {
+        "tags": ["webhooks"],
+        "summary": "Register a webhook",
+        "description": "Subscribe a URL to receive event notifications (loan.approved, loan.repaid, loan.liquidated).",
+        "operationId": "registerWebhook",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url"],
+                "properties": {
+                  "url": { "type": "string", "format": "uri", "example": "https://example.com/hook" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Webhook registered",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WebhookRecord" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/admin/webhooks": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "List registered webhooks",
+        "operationId": "listWebhooks",
+        "responses": {
+          "200": {
+            "description": "Array of webhook records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/WebhookRecord" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/webhooks/logs": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "List webhook delivery logs",
+        "operationId": "listWebhookLogs",
+        "responses": {
+          "200": {
+            "description": "Array of delivery log entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/WebhookLog" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "api_version": { "type": "string", "example": "v1" },
+          "status": { "type": "string", "enum": ["healthy", "degraded"] },
+          "version": { "type": "string", "example": "1.0.0" },
+          "uptime": { "type": "integer", "description": "Uptime in seconds" },
+          "rpcReachable": { "type": "boolean" }
+        }
+      },
+      "RegisterCollateralRequest": {
+        "type": "object",
+        "required": ["owner", "animal_type", "count", "appraised_value"],
+        "properties": {
+          "owner": { "type": "string", "description": "Stellar public key (G...)", "example": "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN" },
+          "animal_type": { "type": "string", "example": "cattle" },
+          "count": { "type": "integer", "minimum": 1, "example": 5 },
+          "appraised_value": { "type": "integer", "minimum": 1, "description": "Total appraised value in token base units", "example": 5000000 }
+        }
+      },
+      "LoanRequestBody": {
+        "type": "object",
+        "required": ["borrower", "collateral_ids", "amount"],
+        "properties": {
+          "borrower": { "type": "string", "description": "Stellar public key", "example": "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN" },
+          "collateral_ids": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 1, "example": [1, 2] },
+          "amount": { "type": "integer", "minimum": 1, "description": "Gross loan amount in token base units", "example": 3000000 }
+        }
+      },
+      "LoanRepayBody": {
+        "type": "object",
+        "required": ["borrower", "loan_id", "amount"],
+        "properties": {
+          "borrower": { "type": "string", "example": "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN" },
+          "loan_id": { "type": "integer", "minimum": 0, "example": 1 },
+          "amount": { "type": "integer", "minimum": 1, "example": 1000000 }
+        }
+      },
+      "LoanLiquidateBody": {
+        "type": "object",
+        "required": ["liquidator", "loan_id", "repay_amount"],
+        "properties": {
+          "liquidator": { "type": "string", "example": "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN" },
+          "loan_id": { "type": "integer", "minimum": 0, "example": 1 },
+          "repay_amount": { "type": "integer", "minimum": 1, "example": 500000 }
+        }
+      },
+      "XdrResponse": {
+        "type": "object",
+        "properties": {
+          "api_version": { "type": "string", "example": "v1" },
+          "xdr": { "type": "string", "description": "Base64-encoded unsigned Soroban transaction XDR" }
+        }
+      },
+      "ScValResponse": {
+        "type": "object",
+        "properties": {
+          "api_version": { "type": "string", "example": "v1" },
+          "result": { "description": "Raw Soroban ScVal result" }
+        }
+      },
+      "HealthFactorResponse": {
+        "type": "object",
+        "properties": {
+          "api_version": { "type": "string", "example": "v1" },
+          "health_factor": { "description": "Health factor scaled by 10 000 (≥10000 = healthy)" }
+        }
+      },
+      "WebhookRecord": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "WebhookLog": {
+        "type": "object",
+        "properties": {
+          "webhookId": { "type": "string" },
+          "event": { "type": "string" },
+          "status": { "type": "integer" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "details": { "type": "array", "items": { "type": "object" } }
+        }
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Request validation failed",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Too many requests",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      }
+    }
+  }
+}

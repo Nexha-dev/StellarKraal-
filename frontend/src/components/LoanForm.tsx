@@ -1,21 +1,23 @@
 "use client";
 import { useState } from "react";
-import { signTransaction } from "@stellar/freighter-api";
+import { signTransaction } from "@/lib/freighterClient";
 import { submitSignedXdr } from "@/lib/stellarUtils";
+import { colors } from "@/lib/design-tokens";
 
 interface Props {
   walletAddress: string;
+  initialCollateralId?: string;
 }
 
 const ANIMAL_TYPES = ["cattle", "goat", "sheep"];
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-export default function LoanForm({ walletAddress }: Props) {
-  const [step, setStep] = useState<"collateral" | "loan">("collateral");
+export default function LoanForm({ walletAddress, initialCollateralId }: Props) {
+  const [step, setStep] = useState<"collateral" | "loan">(initialCollateralId ? "loan" : "collateral");
   const [animalType, setAnimalType] = useState("cattle");
   const [count, setCount] = useState("");
   const [appraisedValue, setAppraisedValue] = useState("");
-  const [collateralId, setCollateralId] = useState("");
+  const [collateralId, setCollateralId] = useState(initialCollateralId || "");
   const [loanAmount, setLoanAmount] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,6 +51,7 @@ export default function LoanForm({ walletAddress }: Props) {
   async function requestLoan() {
     setLoading(true);
     setStatus(null);
+    setLoading(true);
     try {
       const res = await fetch(`${API}/api/loan/request`, {
         method: "POST",
@@ -70,35 +73,73 @@ export default function LoanForm({ walletAddress }: Props) {
     }
   }
 
+  if (loading && step === "collateral") return null;
+
   return (
-    <div className="bg-white rounded-2xl p-6 shadow mt-6 space-y-4">
+    <div className={`${colors.background.card} rounded-2xl p-6 shadow mt-6 space-y-4`}>
       {step === "collateral" ? (
         <>
-          <h2 className="text-xl font-semibold text-brown">1. Register Collateral</h2>
+          <h2 className={`text-xl font-semibold ${colors.text.primary}`}>1. Register Collateral</h2>
           <select
-            className="w-full border border-brown/30 rounded-lg px-3 py-2"
+            className={`w-full ${colors.form.input} rounded-lg px-3 py-2 ${colors.text.primary}`}
             value={animalType}
             onChange={(e) => setAnimalType(e.target.value)}
           >
             {ANIMAL_TYPES.map((a) => <option key={a}>{a}</option>)}
           </select>
-          <input className="w-full border border-brown/30 rounded-lg px-3 py-2" placeholder="Count" value={count} onChange={(e) => setCount(e.target.value)} type="number" />
-          <input className="w-full border border-brown/30 rounded-lg px-3 py-2" placeholder="Appraised value (stroops)" value={appraisedValue} onChange={(e) => setAppraisedValue(e.target.value)} type="number" />
-          <button onClick={registerCollateral} disabled={loading} className="w-full bg-brown text-cream py-2.5 rounded-xl font-semibold hover:bg-brown/80 transition disabled:opacity-50">
+          <input 
+            className={`w-full ${colors.form.input} rounded-lg px-3 py-2 ${colors.text.primary} ${colors.form.placeholder}`} 
+            placeholder="Count" 
+            value={count} 
+            onChange={(e) => setCount(e.target.value)} 
+            type="number" 
+          />
+          <input 
+            className={`w-full ${colors.form.input} rounded-lg px-3 py-2 ${colors.text.primary} ${colors.form.placeholder}`} 
+            placeholder="Appraised value (stroops)" 
+            value={appraisedValue} 
+            onChange={(e) => setAppraisedValue(e.target.value)} 
+            type="number" 
+          />
+          <button 
+            onClick={registerCollateral} 
+            disabled={loading} 
+            className={`w-full ${colors.primary.bg} ${colors.primary.text} py-2.5 rounded-xl font-semibold ${colors.primary.hover} transition ${colors.interactive.disabled} ${colors.interactive.focus}`}
+          >
             {loading ? "Processing…" : "Register & Continue"}
           </button>
         </>
       ) : (
         <>
-          <h2 className="text-xl font-semibold text-brown">2. Request Loan</h2>
-          <input className="w-full border border-brown/30 rounded-lg px-3 py-2" placeholder="Collateral ID" value={collateralId} onChange={(e) => setCollateralId(e.target.value)} type="number" />
-          <input className="w-full border border-brown/30 rounded-lg px-3 py-2" placeholder="Loan amount (stroops)" value={loanAmount} onChange={(e) => setLoanAmount(e.target.value)} type="number" />
-          <button onClick={requestLoan} disabled={loading} className="w-full bg-gold text-brown py-2.5 rounded-xl font-semibold hover:bg-gold/80 transition disabled:opacity-50">
+          <h2 className={`text-xl font-semibold ${colors.text.primary}`}>2. Request Loan</h2>
+          <input 
+            className={`w-full ${colors.form.input} rounded-lg px-3 py-2 ${colors.text.primary} ${colors.form.placeholder}`} 
+            placeholder="Collateral ID" 
+            value={collateralId} 
+            onChange={(e) => setCollateralId(e.target.value)} 
+            type="number" 
+          />
+          <input 
+            className={`w-full ${colors.form.input} rounded-lg px-3 py-2 ${colors.text.primary} ${colors.form.placeholder}`} 
+            placeholder="Loan amount (stroops)" 
+            value={loanAmount} 
+            onChange={(e) => setLoanAmount(e.target.value)} 
+            type="number" 
+          />
+          <button 
+            onClick={requestLoan} 
+            disabled={loading} 
+            className={`w-full ${colors.secondary.bg} ${colors.secondary.text} py-2.5 rounded-xl font-semibold ${colors.secondary.hover} transition ${colors.interactive.disabled} ${colors.interactive.focus}`}
+          >
             {loading ? "Processing…" : "Request Loan"}
           </button>
         </>
       )}
-      {status && <p className="text-sm mt-2">{status}</p>}
+      {status && (
+        <p className={`text-sm mt-2 ${status.includes('❌') ? colors.status.error.text : colors.status.success.text}`}>
+          {status}
+        </p>
+      )}
     </div>
   );
 }

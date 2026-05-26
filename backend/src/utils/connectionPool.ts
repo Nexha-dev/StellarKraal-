@@ -89,6 +89,15 @@ class ConnectionPool {
       this.release(conn);
     }
   }
+
+  /**
+   * Close all connections in the pool.
+   * Should be called during graceful shutdown.
+   */
+  close(): void {
+    this.pool = [];
+    this.inUse.clear();
+  }
 }
 
 const POOL_MIN = parseInt(process.env.POOL_MIN || "2", 10);

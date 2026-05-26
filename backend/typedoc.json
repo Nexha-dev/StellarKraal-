@@ -1,0 +1,25 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "src/db/store.ts",
+    "src/utils/asyncHandler.ts",
+    "src/utils/alerting.ts",
+    "src/utils/appraisalCache.ts",
+    "src/utils/connectionPool.ts",
+    "src/utils/alertRules.ts",
+    "src/utils/rpcClient.ts",
+    "src/utils/logger.ts",
+    "src/loanStateMachine.ts",
+    "src/validators/stellar.ts"
+  ],
+  "out": "../docs/backend",
+  "name": "StellarKraal Backend",
+  "readme": "none",
+  "includeVersion": true,
+  "skipErrorChecking": true,
+  "validation": {
+    "notExported": false,
+    "invalidLink": false,
+    "notDocumented": false
+  }
+}

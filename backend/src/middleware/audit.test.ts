@@ -1,4 +1,4 @@
-import { auditMiddleware } from "./audit";
+import { auditMiddleware, redact } from "./audit";
 import { Request, Response, NextFunction } from "express";
 import { EventEmitter } from "events";
 
@@ -64,5 +64,40 @@ describe("redact (via middleware body)", () => {
     const res = makeRes();
     const req = makeReq({ body: null } as any);
     expect(() => auditMiddleware(req, res, next)).not.toThrow();
+  });
+});
+
+describe("redact (direct)", () => {
+  it("redacts known sensitive fields", () => {
+    const result = redact({
+      borrower: "GABC",
+      amount: 1000,
+      private_key: "secret123",
+      privateKey: "0xdeadbeef",
+      password: "hunter2",
+      apiKey: "key-abc",
+    }) as Record<string, unknown>;
+
+    expect(result.borrower).toBe("GABC");
+    expect(result.amount).toBe(1000);
+    expect(result.private_key).toBe("[REDACTED]");
+    expect(result.privateKey).toBe("[REDACTED]");
+    expect(result.password).toBe("[REDACTED]");
+    expect(result.apiKey).toBe("[REDACTED]");
+  });
+
+  it("redacts nested sensitive fields", () => {
+    const result = redact({
+      user: { password: "secret", name: "Alice" },
+    }) as any;
+
+    expect(result.user.password).toBe("[REDACTED]");
+    expect(result.user.name).toBe("Alice");
+  });
+
+  it("returns primitives unchanged", () => {
+    expect(redact("string")).toBe("string");
+    expect(redact(42)).toBe(42);
+    expect(redact(null)).toBe(null);
   });
 });

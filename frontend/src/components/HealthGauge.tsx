@@ -1,5 +1,6 @@
 "use client";
-import { healthColor } from "@/lib/stellarUtils";
+import { healthColor } from "@/lib/design-tokens";
+import { colors } from "@/lib/design-tokens";
 
 interface Props {
   value: number; // bps, 10_000 = 1.0
@@ -15,9 +16,9 @@ export default function HealthGauge({ value }: Props) {
     <div className="mt-4">
       <div className="flex justify-between text-sm mb-1">
         <span className="font-semibold" style={{ color }}>{label}</span>
-        <span className="text-brown/60">{(value / 10_000).toFixed(2)}x</span>
+        <span className={colors.text.secondary}>{(value / 10_000).toFixed(2)}x</span>
       </div>
-      <div className="w-full bg-brown/10 rounded-full h-4 overflow-hidden">
+      <div className="w-full bg-brown-100 rounded-full h-4 overflow-hidden">
         <div
           className="h-4 rounded-full transition-all duration-500"
           style={{ width: `${pct}%`, backgroundColor: color }}

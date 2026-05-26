@@ -1,0 +1,101 @@
+name: Build and Push to GHCR
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/stellarkraal-backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/stellarkraal-frontend
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        include:
+          - service: backend
+            context: ./backend
+            image_env: BACKEND_IMAGE
+          - service: frontend
+            context: ./frontend
+            image_env: FRONTEND_IMAGE
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags and labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env[matrix.image_env] }}
+          tags: |
+            # Branch name tag (e.g. main, develop)
+            type=ref,event=branch
+            # Git commit SHA (short)
+            type=sha,prefix=sha-,format=short
+            # Semver tags on release (v1.2.3 → 1.2.3, 1.2, 1)
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            # latest only on semver releases (not on branch pushes)
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Registry cleanup: remove images older than 90 days
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      packages: write
+
+    steps:
+      - name: Delete old backend images (>90 days)
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: stellarkraal-backend
+          package-type: container
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: false
+          ignore-versions: "^(latest|v\\d+\\.\\d+\\.\\d+)$"
+        continue-on-error: true
+
+      - name: Delete old frontend images (>90 days)
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: stellarkraal-frontend
+          package-type: container
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: false
+          ignore-versions: "^(latest|v\\d+\\.\\d+\\.\\d+)$"
+        continue-on-error: true

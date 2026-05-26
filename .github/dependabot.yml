@@ -1,0 +1,63 @@
+version: 2
+updates:
+  # Backend npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      backend-dependencies:
+        patterns:
+          - "*"
+    reviewers:
+      - "teslims2"
+    labels:
+      - "dependencies"
+      - "backend"
+    ignore:
+      # db-migrate pinned due to SQLite3 native binding compatibility
+      - dependency-name: "db-migrate"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "db-migrate-sqlite3"
+        update-types: ["version-update:semver-major"]
+
+  # Frontend npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      frontend-dependencies:
+        patterns:
+          - "*"
+    reviewers:
+      - "teslims2"
+    labels:
+      - "dependencies"
+      - "frontend"
+    ignore:
+      # Next.js major upgrades require manual migration
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+
+  # Rust / Cargo dependencies
+  - package-ecosystem: "cargo"
+    directory: "/contracts/stellarkraal"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      cargo-dependencies:
+        patterns:
+          - "*"
+    reviewers:
+      - "teslims2"
+    labels:
+      - "dependencies"
+      - "smart-contract"
+    ignore:
+      # soroban-sdk major bumps require contract re-audit
+      - dependency-name: "soroban-sdk"
+        update-types: ["version-update:semver-major"]

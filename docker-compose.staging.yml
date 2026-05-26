@@ -1,0 +1,34 @@
+# Staging environment Docker Compose override.
+# Uses Stellar testnet RPC and a separate staging contract deployment.
+# Staging secrets are stored as GitHub Actions environment secrets
+# under the "staging" environment (Settings → Environments → staging).
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d
+
+services:
+  backend:
+    environment:
+      - NODE_ENV=staging
+      - PORT=3001
+      - RPC_URL=${STAGING_RPC_URL:-https://soroban-testnet.stellar.org}
+      - CONTRACT_ID=${STAGING_CONTRACT_ID}
+      - JWT_SECRET=${JWT_SECRET}
+      - FRONTEND_URL=${STAGING_FRONTEND_URL:-https://staging.stellarkraal.example.com}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    environment:
+      - NODE_ENV=staging
+      - NEXT_PUBLIC_NETWORK=testnet
+      - NEXT_PUBLIC_API_URL=${STAGING_API_URL:-https://api-staging.stellarkraal.example.com}
+      - NEXT_PUBLIC_RPC_URL=${STAGING_RPC_URL:-https://soroban-testnet.stellar.org}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

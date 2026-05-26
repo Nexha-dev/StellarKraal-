@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
-import { signTransaction } from "@stellar/freighter-api";
+import { signTransaction } from "@/lib/freighterClient";
 import { submitSignedXdr } from "@/lib/stellarUtils";
+import { colors } from "@/lib/design-tokens";
 
 interface Props {
   walletAddress: string;
@@ -36,16 +37,36 @@ export default function RepayPanel({ walletAddress }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow mb-4">
-      <h2 className="text-xl font-semibold text-brown mb-3">Repay Loan</h2>
+    <div className={`${colors.background.card} rounded-2xl p-6 shadow mb-4`}>
+      <h2 className={`text-xl font-semibold ${colors.text.primary} mb-3`}>Repay Loan</h2>
       <div className="space-y-3">
-        <input className="w-full border border-brown/30 rounded-lg px-3 py-2" placeholder="Loan ID" value={loanId} onChange={(e) => setLoanId(e.target.value)} type="number" />
-        <input className="w-full border border-brown/30 rounded-lg px-3 py-2" placeholder="Amount (stroops)" value={amount} onChange={(e) => setAmount(e.target.value)} type="number" />
-        <button onClick={repay} disabled={loading} className="w-full bg-gold text-brown py-2.5 rounded-xl font-semibold hover:bg-gold/80 transition disabled:opacity-50">
+        <input 
+          className={`w-full ${colors.form.input} rounded-lg px-3 py-2 ${colors.text.primary} ${colors.form.placeholder}`} 
+          placeholder="Loan ID" 
+          value={loanId} 
+          onChange={(e) => setLoanId(e.target.value)} 
+          type="number" 
+        />
+        <input 
+          className={`w-full ${colors.form.input} rounded-lg px-3 py-2 ${colors.text.primary} ${colors.form.placeholder}`} 
+          placeholder="Amount (stroops)" 
+          value={amount} 
+          onChange={(e) => setAmount(e.target.value)} 
+          type="number" 
+        />
+        <button 
+          onClick={repay} 
+          disabled={loading} 
+          className={`w-full ${colors.secondary.bg} ${colors.secondary.text} py-2.5 rounded-xl font-semibold ${colors.secondary.hover} transition ${colors.interactive.disabled} ${colors.interactive.focus}`}
+        >
           {loading ? "Processing…" : "Repay"}
         </button>
       </div>
-      {status && <p className="text-sm mt-2">{status}</p>}
+      {status && (
+        <p className={`text-sm mt-2 ${status.includes('❌') ? colors.status.error.text : colors.status.success.text}`}>
+          {status}
+        </p>
+      )}
     </div>
   );
 }

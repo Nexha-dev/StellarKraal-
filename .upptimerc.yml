@@ -1,0 +1,40 @@
+owner: firstJOASH
+repo: StellarKraal-
+
+sites:
+  - name: Frontend
+    url: $FRONTEND_URL
+
+  - name: Backend API Health
+    url: $BACKEND_URL/api/health
+    expectedStatusCodes:
+      - 200
+
+  - name: Stellar RPC
+    url: https://soroban-testnet.stellar.org
+    expectedStatusCodes:
+      - 200
+      - 405 # POST-only endpoint returns 405 on GET
+
+status-website:
+  cname: status.stellarkraal.io   # update to your domain or remove for *.github.io
+  name: StellarKraal Status
+  introTitle: StellarKraal Service Status
+  introMessage: Real-time and historical uptime for StellarKraal services.
+  navbar:
+    - title: GitHub
+      href: https://github.com/firstJOASH/StellarKraal-
+
+notifications:
+  - type: slack
+    webhook: $SLACK_WEBHOOK
+
+  - type: email
+    to: $NOTIFICATION_EMAIL
+
+# Alert after 2 consecutive failures
+maximumResponseTime: 30000
+consecutiveFailures: 2
+
+# Retain 30 days of history
+historyDays: 30

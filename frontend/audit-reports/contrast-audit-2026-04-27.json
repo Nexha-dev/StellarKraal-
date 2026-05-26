@@ -1,0 +1,112 @@
+{
+  "timestamp": "2026-04-27T23:49:48.443Z",
+  "summary": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "passRate": "100.0%"
+  },
+  "results": [
+    {
+      "name": "Primary text on white",
+      "foreground": "#3D2810",
+      "background": "#FFFFFF",
+      "textSize": "normal",
+      "contrastRatio": 13.91,
+      "threshold": 4.5,
+      "passes": true,
+      "wcagLevel": "AA"
+    },
+    {
+      "name": "Secondary text on white",
+      "foreground": "#5D3C15",
+      "background": "#FFFFFF",
+      "textSize": "normal",
+      "contrastRatio": 9.89,
+      "threshold": 4.5,
+      "passes": true,
+      "wcagLevel": "AA"
+    },
+    {
+      "name": "Muted text on white",
+      "foreground": "#8B5A1F",
+      "background": "#FFFFFF",
+      "textSize": "normal",
+      "contrastRatio": 5.87,
+      "threshold": 4.5,
+      "passes": true,
+      "wcagLevel": "AA"
+    },
+    {
+      "name": "Primary button",
+      "foreground": "#FFFFFF",
+      "background": "#5D3C15",
+      "textSize": "normal",
+      "contrastRatio": 9.89,
+      "threshold": 4.5,
+      "passes": true,
+      "wcagLevel": "AA"
+    },
+    {
+      "name": "Secondary button",
+      "foreground": "#FFFFFF",
+      "background": "#B45309",
+      "textSize": "normal",
+      "contrastRatio": 5.02,
+      "threshold": 4.5,
+      "passes": true,
+      "wcagLevel": "AA"
+    },
+    {
+      "name": "Success text",
+      "foreground": "#15803D",
+      "background": "#FFFFFF",
+      "textSize": "normal",
+      "contrastRatio": 5.02,
+      "threshold": 4.5,
+      "passes": true,
+      "wcagLevel": "AA"
+    },
+    {
+      "name": "Error text",
+      "foreground": "#B91C1C",
+      "background": "#FFFFFF",
+      "textSize": "normal",
+      "contrastRatio": 6.47,
+      "threshold": 4.5,
+      "passes": true,
+      "wcagLevel": "AA"
+    },
+    {
+      "name": "Warning text",
+      "foreground": "#B45309",
+      "background": "#FFFFFF",
+      "textSize": "normal",
+      "contrastRatio": 5.02,
+      "threshold": 4.5,
+      "passes": true,
+      "wcagLevel": "AA"
+    },
+    {
+      "name": "Form input text",
+      "foreground": "#3D2810",
+      "background": "#FFFFFF",
+      "textSize": "normal",
+      "contrastRatio": 13.91,
+      "threshold": 4.5,
+      "passes": true,
+      "wcagLevel": "AA"
+    },
+    {
+      "name": "Form border",
+      "foreground": "#8B5A1F",
+      "background": "#FFFFFF",
+      "textSize": "normal",
+      "contrastRatio": 5.87,
+      "threshold": 4.5,
+      "passes": true,
+      "wcagLevel": "AA"
+    }
+  ],
+  "failures": []
+}

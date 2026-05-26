@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "/home/caxton/work/StellarKraal-/backend/logs/.3e67080b4922905132a75e3b9a80f2d1a7bc67e2-audit.json",
+    "files": [
+        {
+            "date": 1777445324218,
+            "name": "/home/caxton/work/StellarKraal-/backend/logs/audit-2026-04-29.log",
+            "hash": "503956788c927febe946cf9efa328fe8b99f028faafe7a5a6505d7178e1be219"
+        }
+    ],
+    "hashType": "sha256"
+}

@@ -24,4 +24,9 @@ describe("HealthGauge", () => {
     render(<HealthGauge value={10000} />);
     expect(screen.getByText("1.00x")).toBeTruthy();
   });
+
+  it("matches snapshot (stable leaf component)", () => {
+    const { container } = render(<HealthGauge value={13333} />);
+    expect(container.firstChild).toMatchSnapshot();
+  });
 });

@@ -5,12 +5,12 @@ import path from "path";
 
 // ── Sensitive fields to redact ────────────────────────────────────────────────
 const REDACTED_FIELDS = new Set([
-  "password", "secret", "private_key", "privateKey", "seed",
-  "mnemonic", "token", "authorization", "api_key", "apiKey",
-  "secret_key", "secretKey", "signing_key", "signingKey",
+  "password", "secret", "private_key", "privatekey", "seed",
+  "mnemonic", "token", "authorization", "api_key", "apikey",
+  "secret_key", "secretkey", "signing_key", "signingkey",
 ]);
 
-function redact(obj: unknown, depth = 0): unknown {
+export function redact(obj: unknown, depth = 0): unknown {
   if (depth > 5 || obj === null || typeof obj !== "object") return obj;
   const result: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {

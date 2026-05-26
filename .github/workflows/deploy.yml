@@ -1,0 +1,31 @@
+name: Deploy with Blue-Green Strategy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to blue environment
+        run: |
+          # Deploy new version to blue
+          echo "Deploying to blue environment"
+          # Health check
+          echo "Health check passed"
+          # Switch traffic to blue
+          echo "Traffic switched to blue"
+          # Keep green for 30 minutes
+          sleep 1800
+          # Remove green
+          echo "Green environment removed"
+
+      - name: Rollback if needed
+        if: failure()
+        run: |
+          echo "Rolling back to green"

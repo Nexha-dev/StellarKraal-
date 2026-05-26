@@ -1,0 +1,28 @@
+name: Static Site CI
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 * * * *" # hourly rebuild
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Generate status page
+        uses: upptime/uptime-monitor@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          UPDATE_SITE: true
