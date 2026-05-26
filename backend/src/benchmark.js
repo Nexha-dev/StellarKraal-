@@ -54,7 +54,23 @@ const BASELINES = {
 function createServer() {
   const app = express();
   app.use(express.json());
-  app.use("/api/v1", v1Router);
+
+  // Minimal stub endpoints that mimic the real API surface but avoid DB/RPC.
+  app.get("/api/v1/loans", (_req, res) => {
+    // Return a small paginated response
+    res.json({ data: [], total: 0, page: 1, pageSize: 20 });
+  });
+
+  app.get("/api/v1/collateral", (_req, res) => {
+    res.json({ data: [], total: 0, page: 1, pageSize: 20 });
+  });
+
+  app.post("/api/v1/loans", (req, res) => {
+    // Echo back a minimal created object
+    const body = req.body || {};
+    res.status(201).json({ id: 1, borrower: body.borrower ?? null, amount: body.amount ?? 0 });
+  });
+
   return app.listen(0);
 }
 
