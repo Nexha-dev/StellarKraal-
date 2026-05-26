@@ -39,11 +39,14 @@ export default function LoanForm({ walletAddress }: Props) {
       const result = await submitSignedXdr(signedTxXdr);
       setStatus(`✅ Collateral registered! ID: ${result}`);
       setStep("loan");
-    }).catch((e: any) => setStatus(`❌ ${e.message}`));
+    } catch (e: any) {
+      setStatus(`❌ ${e.message}`);
+    }
   }
 
   async function requestLoan() {
     setStatus(null);
+    setLoading(true);
     try {
       const res = await fetch(`${API}/api/loan/request`, {
         method: "POST",
@@ -65,7 +68,7 @@ export default function LoanForm({ walletAddress }: Props) {
     }
   }
 
-  if (isLoading) return <SkeletonLoanCard />;
+  if (loading && step === "collateral") return null;
 
   return (
     <div className={`${colors.background.card} rounded-2xl p-6 shadow mt-6 space-y-4`}>
