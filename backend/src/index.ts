@@ -51,7 +51,7 @@ import { globalLimiter, authLimiter } from "./middleware/rateLimit";
 import { asyncHandler } from "./utils/asyncHandler";
 import { stellarPublicKeySchema } from "./validators/stellar";
 import rpcClient from "./utils/rpcClient";
-import { registerWebhook, getWebhooks, getDeliveryLogs } from "./webhooks";
+import { registerWebhook, getWebhooks, getDeliveryLogs, fireWebhooks } from "./webhooks";
 import { fireAlert } from "./utils/alerting";
 import { rules } from "./utils/alertRules";
 import {
@@ -173,19 +173,6 @@ import { v1Router } from "./routes/v1";
 
 // Mount v1 routes
 app.use("/api/v1", v1Router);
-
-// Redirect unversioned routes to v1 with deprecation warning
-app.use("/api/:endpoint(*)", (req: Request, res: Response, next: NextFunction) => {
-  // Skip if already versioned or is auth/health
-  if (req.path.startsWith("/api/v1") || req.path === "/api/health" || req.path.startsWith("/api/auth")) {
-    return next();
-  }
-  
-  const newPath = req.path.replace(/^\/api/, "/api/v1");
-  res.setHeader("Deprecation", "true");
-  res.setHeader("Warning", '299 - "Unversioned API routes are deprecated. Use /api/v1/ prefix."');
-  res.redirect(301, newPath + (req.url.includes("?") ? req.url.substring(req.url.indexOf("?")) : ""));
-});
 
 const CONTRACT_ID = process.env.CONTRACT_ID || "";
 const NETWORK_PASSPHRASE =
@@ -410,7 +397,7 @@ app.post(
     if (!validation.success) {
       return res.status(400).json({
         error: "Validation failed",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
     }
 
@@ -435,7 +422,7 @@ app.post(
     if (!validation.success) {
       return res.status(400).json({
         error: "Validation failed",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
     }
 
@@ -483,7 +470,7 @@ app.post(
     if (!validation.success) {
       const body = {
         error: "Validation failed",
-        details: validation.error.errors,
+        details: validation.error.issues,
       };
       setIdempotencyEntry(idempotencyKey, 400, body);
       return res.status(400).json(body);
@@ -510,7 +497,7 @@ app.post(
     if (!validation.success) {
       return res.status(400).json({
         error: "Validation failed",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
     }
 
@@ -935,6 +922,19 @@ process.on("unhandledRejection", (reason: unknown) => {
     reason: reason instanceof Error ? reason.message : String(reason),
   });
   gracefulShutdown("unhandledRejection");
+});
+
+// Redirect unversioned routes to v1 with deprecation warning
+app.use("/api", (req: Request, res: Response, next: NextFunction) => {
+  // Skip if already versioned or is auth/health
+  if (req.path.startsWith("/api/v1") || req.path === "/api/health" || req.path.startsWith("/api/auth")) {
+    return next();
+  }
+
+  const newPath = req.path.replace(/^\/api/, "/api/v1");
+  res.setHeader("Deprecation", "true");
+  res.setHeader("Warning", '299 - "Unversioned API routes are deprecated. Use /api/v1/ prefix."');
+  res.redirect(301, newPath + (req.url.includes("?") ? req.url.substring(req.url.indexOf("?")) : ""));
 });
 
 export default app;

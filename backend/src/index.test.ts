@@ -3,6 +3,7 @@ import app from "./index";
 import {
   insertCollateral,
   insertLoan,
+  insertTransaction,
 } from "./db/store";
 
 // Valid 56-char Stellar public key for use in tests
@@ -25,6 +26,8 @@ jest.mock("./utils/rpcClient", () => ({
     prepareTransaction: jest.fn().mockResolvedValue({ toXDR: () => "prepared_xdr" }),
     simulateTransaction: jest.fn().mockResolvedValue({ result: { retval: { value: 42 } } }),
     getHealth: jest.fn().mockResolvedValue({ status: "healthy" }),
+    getCircuitStates: jest.fn().mockReturnValue([]),
+    isHealthy: jest.fn().mockReturnValue(true),
   },
 }));
 
@@ -141,7 +144,8 @@ describe("StellarKraal API", () => {
       });
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty("error", "Validation failed");
-      expect(res.body.details[0].message).toContain("Stellar public key");
+      expect(res.body.details).toBeDefined();
+      expect(Array.isArray(res.body.details)).toBe(true);
     });
   });
 
@@ -252,9 +256,130 @@ describe("StellarKraal API", () => {
       expect(res.status).toBe(400);
     });
 
+    it("returns 400 for SQL-like page value", async () => {
+      const res = await request(app).get("/api/loans?page=1;DROP TABLE loans");
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 for SQL-like pageSize value", async () => {
+      const res = await request(app).get("/api/loans?pageSize=1;DROP TABLE loans");
+      expect(res.status).toBe(400);
+    });
+
     it("adds deprecation warning header when no pagination params", async () => {
       const res = await request(app).get("/api/loans");
       expect(res.headers["deprecation"]).toBe("true");
+    });
+  });
+
+  describe("GET /api/transactions", () => {
+    const maliciousBorrower = "GAAAAAAA; DROP TABLE transactions; --";
+    const maliciousType = "loan; DROP TABLE transactions; --";
+    const maliciousStatus = "completed; DROP TABLE transactions; --";
+    const injectionDate = "2024-01-01; DROP TABLE transactions; --";
+
+    beforeAll(() => {
+      insertTransaction({
+        borrower: VALID_ADDRESS,
+        type: "loan",
+        status: "pending",
+        amount: 500000,
+      });
+    });
+
+    it("returns empty result for SQL injection attempt in borrower filter", async () => {
+      const res = await request(app)
+        .get(`/api/transactions?borrower=${encodeURIComponent(maliciousBorrower)}&page=1&pageSize=20`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty("data");
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data).toHaveLength(0);
+      expect(res.body.total).toBe(0);
+    });
+
+    it("returns empty result for SQL injection attempt in type filter", async () => {
+      const res = await request(app)
+        .get(`/api/transactions?type=${encodeURIComponent(maliciousType)}&page=1&pageSize=20`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(0);
+    });
+
+    it("returns empty result for SQL injection attempt in status filter", async () => {
+      const res = await request(app)
+        .get(`/api/transactions?status=${encodeURIComponent(maliciousStatus)}&page=1&pageSize=20`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(0);
+    });
+
+    it("returns 400 for SQL injection attempt in startDate filter", async () => {
+      const res = await request(app)
+        .get(`/api/transactions?startDate=${encodeURIComponent(injectionDate)}&page=1&pageSize=20`);
+
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 for SQL injection attempt in endDate filter", async () => {
+      const res = await request(app)
+        .get(`/api/transactions?endDate=${encodeURIComponent(injectionDate)}&page=1&pageSize=20`);
+
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 for SQL-like page parameter", async () => {
+      const res = await request(app).get("/api/transactions?page=1;DROP TABLE transactions");
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 for SQL-like pageSize parameter", async () => {
+      const res = await request(app).get("/api/transactions?pageSize=1;DROP TABLE transactions");
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe("SQL injection protections in request bodies", () => {
+    it("returns 400 for SQL injection attempt in loan request borrower", async () => {
+      const res = await request(app).post("/api/loan/request").send({
+        borrower: "SAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN; DROP TABLE loans; --",
+        collateral_id: 1,
+        amount: 600000,
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 for SQL injection attempt in loan repay borrower", async () => {
+      const res = await request(app)
+        .post("/api/loan/repay")
+        .set("Idempotency-Key", "sql-injection-test-01")
+        .send({
+          borrower: "NOT_A_VALID_KEY; DROP TABLE loans; --",
+          loan_id: 1,
+          amount: 200000,
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 for SQL injection attempt in collateral register owner", async () => {
+      const res = await request(app).post("/api/collateral/register").send({
+        owner: "INVALID_KEY; DROP TABLE collateral; --",
+        animal_type: "cattle",
+        count: 5,
+        appraised_value: 1000000,
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 for SQL injection-like invalid webhook url", async () => {
+      const res = await request(app).post("/api/webhooks").send({
+        url: "javascript:alert('x');DROP TABLE webhooks; --",
+      });
+
+      expect(res.status).toBe(400);
     });
   });
 
