@@ -10,7 +10,10 @@
     "test:a11y": "playwright test -c playwright-a11y.config.ts",
     "test:e2e": "playwright test -c playwright.e2e.config.ts",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.tsx --max-warnings 0"
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src"
   },
   "dependencies": {
     "@stellar/freighter-api": "^6.0.1",
@@ -35,6 +38,9 @@
     "autoprefixer": "^10.5.0",
     "eslint": "^10.4.0",
     "eslint-config-next": "16.2.6",
+    "eslint-config-prettier": "^10.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "prettier": "^3.0.0",
     "jest": "^30.4.2",
     "jest-axe": "^10.0.0",
     "jest-environment-jsdom": "^30.4.1",
