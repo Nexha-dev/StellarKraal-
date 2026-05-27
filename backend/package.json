@@ -14,7 +14,11 @@
     "migrate:check": "db-migrate check --config database.json --env dev",
     "migrate:create": "db-migrate create --config database.json --sql-file",
     "migrate:reset": "db-migrate reset --config database.json --env dev",
-    "docs": "typedoc"
+    "docs": "typedoc",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^15.1.0",
@@ -37,6 +41,12 @@
     "@types/supertest": "^7.2.0",
     "db-migrate": "^0.11.14",
     "db-migrate-sqlite3": "^1.0.2",
+    "eslint": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint-config-prettier": "^10.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "prettier": "^3.0.0",
     "jest": "^30.4.2",
     "supertest": "^7.0.0",
     "ts-jest": "^29.4.11",

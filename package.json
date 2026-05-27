@@ -6,6 +6,21 @@
     "test:contract": "cd contracts/stellarkraal && cargo test",
     "test:backend": "cd backend && npm test",
     "test:frontend": "cd frontend && npm test",
-    "verify:deployment": "NODE_PATH=./backend/node_modules npx ts-node --project scripts/tsconfig.json scripts/verify-deployment.ts"
+    "verify:deployment": "NODE_PATH=./backend/node_modules npx ts-node --project scripts/tsconfig.json scripts/verify-deployment.ts",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2"
+  },
+  "lint-staged": {
+    "backend/src/**/*.ts": [
+      "prettier --write",
+      "eslint --max-warnings 0"
+    ],
+    "frontend/src/**/*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --max-warnings 0"
+    ]
   }
 }

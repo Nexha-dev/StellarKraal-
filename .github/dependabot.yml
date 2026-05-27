@@ -15,6 +15,7 @@ updates:
     labels:
       - "dependencies"
       - "backend"
+      - "security"
     ignore:
       # db-migrate pinned due to SQLite3 native binding compatibility
       - dependency-name: "db-migrate"
@@ -37,6 +38,7 @@ updates:
     labels:
       - "dependencies"
       - "frontend"
+      - "security"
     ignore:
       # Next.js major upgrades require manual migration
       - dependency-name: "next"

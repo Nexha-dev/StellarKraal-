@@ -145,20 +145,19 @@ This repository uses a documented contribution workflow. See [CONTRIBUTING.md](C
 - [ ] Tests run successfully locally
 - [ ] Documentation updated when necessary
 
-## Makefile
+## Security & Vulnerability Management
 
-A `Makefile` at the repository root provides short aliases for common tasks. Run `make help` to list all targets:
+Dependencies are scanned automatically:
 
-| Target | Description |
-|---|---|
-| `make install` | Install dependencies for frontend and backend |
-| `make dev` | Start backend and frontend in development mode |
-| `make build` | Build backend and frontend for production |
-| `make test` | Run all tests (contract, backend, frontend) |
-| `make lint` | Run ESLint and Prettier checks |
-| `make docker-up` | Start all services with Docker Compose |
-| `make docker-down` | Stop and remove Docker Compose services |
-| `make clean` | Remove build artifacts and node_modules |
+- **Dependabot** monitors `backend/` and `frontend/` npm packages weekly. PRs are labelled `dependencies` and `security`.
+- **npm audit** runs every Monday via the [`npm-audit`](.github/workflows/npm-audit.yml) workflow. The workflow fails if any `high` or `critical` severity vulnerability is found.
+
+To run an audit locally:
+
+```bash
+cd backend && npm audit --audit-level=high
+cd frontend && npm audit --audit-level=high
+```
 
 ## Development Scripts
 
