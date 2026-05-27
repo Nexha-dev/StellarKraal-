@@ -3,6 +3,8 @@ import "./globals.css";
 import Link from "next/link";
 import OfflineBanner from "@/components/OfflineBanner";
 import Navbar from "@/components/Navbar";
+
+import { ToastProvider } from "@/context/ToastContext";
 export const metadata: Metadata = {
   title: "StellarKraal — Livestock Micro-Lending",
   description: "Livestock-backed micro-lending on Stellar/Soroban",
@@ -11,8 +13,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="bg-cream text-brown min-h-screen overflow-x-hidden px-4">
-        <OfflineBanner />
-        <nav className="flex gap-4 px-6 py-3 text-sm border-b border-brown/10">
+        <ToastProvider>
+          <OfflineBanner />
+          <nav className="flex gap-4 px-6 py-3 text-sm border-b border-brown/10">
           <Link href="/" className="font-semibold text-brown hover:text-brown/70">StellarKraal</Link>
           <span className="flex-1" />
           <Link href="/loans" className="text-brown/70 hover:text-brown">Loans</Link>
@@ -21,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Link href="/settings" className="text-brown/70 hover:text-brown">Settings</Link>
         </nav>
         {children}
+        </ToastProvider>
       </body>
     </html>
   );
