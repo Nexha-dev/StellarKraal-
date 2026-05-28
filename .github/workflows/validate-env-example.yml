@@ -1,0 +1,26 @@
+name: Validate env.example
+
+on:
+  pull_request:
+    paths:
+      - "backend/src/config.ts"
+      - ".env.example"
+      - "scripts/validate-env-example.js"
+      - ".github/workflows/validate-env-example.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/src/config.ts"
+      - ".env.example"
+
+jobs:
+  validate:
+    name: Check .env.example vs config.ts
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node scripts/validate-env-example.js

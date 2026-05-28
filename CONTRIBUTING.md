@@ -100,6 +100,18 @@ npm run test:backend    # Backend unit + integration tests
 npm run test:contract   # Soroban contract tests
 ```
 
+## Managing Dependencies
+
+Before adding a new dependency, run `depcheck` to confirm it is not already available:
+
+```bash
+# Check for unused dependencies (run from the relevant subdirectory)
+npx depcheck frontend
+npx depcheck backend
+```
+
+Remove any packages flagged as unused before opening a PR. This keeps install time, bundle size, and attack surface minimal.
+
 ---
 
 ## Reporting Issues
